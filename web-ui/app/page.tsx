@@ -12,62 +12,105 @@ interface PoisonResult {
   error?: string;
 }
 
+interface BatchResult {
+  original_name: string;
+  poisoned_image: string;
+  signature_id: string;
+}
+
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PoisonResult | null>(null);
+  const [batchResults, setBatchResults] = useState<BatchResult[]>([]);
   const [epsilon, setEpsilon] = useState(0.01);
+  const [pgdSteps, setPgdSteps] = useState(1);
+  const [mode, setMode] = useState<'single' | 'batch' | 'video'>('single');
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
+    if (mode === 'batch') {
+      setFiles(acceptedFiles);
+      setBatchResults([]);
+      setResult(null);
+    } else if (mode === 'video') {
+      const file = acceptedFiles[0];
       setFile(file);
       setResult(null);
-
-      // Create preview
       const reader = new FileReader();
-      reader.onload = () => {
-        setPreview(reader.result as string);
-      };
+      reader.onload = () => setPreview(reader.result as string);
       reader.readAsDataURL(file);
+    } else {
+      const file = acceptedFiles[0];
+      if (file) {
+        setFile(file);
+        setResult(null);
+        setBatchResults([]);
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = () => {
+          setPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
-  }, []);
+  }, [mode]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg']
-    },
-    maxFiles: 1
+    accept: mode === 'video'
+      ? { 'video/*': ['.mp4', '.avi', '.mov'] }
+      : { 'image/*': ['.png', '.jpg', '.jpeg'] },
+    maxFiles: mode === 'batch' ? 10 : 1,
+    multiple: mode === 'batch'
   });
 
   const poisonImage = async () => {
-    if (!file) return;
+    if (!file && files.length === 0) return;
 
     setLoading(true);
     setResult(null);
+    setBatchResults([]);
 
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('epsilon', epsilon.toString());
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await axios.post(`${apiUrl}/api/poison`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      if (mode === 'batch') {
+        // Batch processing
+        const formData = new FormData();
+        files.forEach((file) => {
+          formData.append('images', file);
+        });
+        formData.append('epsilon', epsilon.toString());
+        formData.append('pgd_steps', pgdSteps.toString());
 
-      setResult(response.data);
+        const response = await axios.post(`${apiUrl}/api/batch`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        setBatchResults(response.data.results);
+      } else {
+        // Single image or video
+        const formData = new FormData();
+        formData.append('image', file!);
+        formData.append('epsilon', epsilon.toString());
+        formData.append('pgd_steps', pgdSteps.toString());
+
+        const response = await axios.post(`${apiUrl}/api/poison`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        setResult(response.data);
+      }
     } catch (error: any) {
       setResult({
         success: false,
         poisonedImage: '',
         signatureId: '',
         signature: null,
-        error: error.response?.data?.error || 'Failed to poison image. Make sure API server is running on port 5000'
+        error: error.response?.data?.error || 'Failed to poison. Make sure API server is running on port 5000'
       });
     } finally {
       setLoading(false);
@@ -114,12 +157,48 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Mode Selector */}
+        <div className="mb-8 bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-green-500/20">
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => setMode('single')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                mode === 'single'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              Single Image
+            </button>
+            <button
+              onClick={() => setMode('batch')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                mode === 'batch'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              Batch Images
+            </button>
+            <button
+              onClick={() => setMode('video')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                mode === 'video'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              Video (Phase 2)
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Panel - Upload */}
           <div className="space-y-6">
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 border border-green-500/20">
               <h2 className="text-2xl font-semibold text-green-400 mb-4">
-                1. Upload Your Image
+                1. Upload Your {mode === 'video' ? 'Video' : mode === 'batch' ? 'Images' : 'Image'}
               </h2>
 
               <div
@@ -131,24 +210,42 @@ export default function Home() {
                 }`}
               >
                 <input {...getInputProps()} />
-                {preview ? (
+                {mode === 'batch' && files.length > 0 ? (
                   <div className="space-y-4">
-                    <img
-                      src={preview}
-                      alt="Preview"
-                      className="max-h-64 mx-auto rounded-lg"
-                    />
+                    <p className="text-green-400 font-semibold">{files.length} files selected</p>
+                    <div className="max-h-40 overflow-y-auto">
+                      {files.map((f, i) => (
+                        <p key={i} className="text-sm text-gray-400">{f.name}</p>
+                      ))}
+                    </div>
+                  </div>
+                ) : preview ? (
+                  <div className="space-y-4">
+                    {mode === 'video' ? (
+                      <video
+                        src={preview}
+                        controls
+                        className="max-h-64 mx-auto rounded-lg"
+                      />
+                    ) : (
+                      <img
+                        src={preview}
+                        alt="Preview"
+                        className="max-h-64 mx-auto rounded-lg"
+                      />
+                    )}
                     <p className="text-sm text-gray-400">{file?.name}</p>
                   </div>
                 ) : (
                   <div>
                     <p className="text-lg text-gray-300 mb-2">
                       {isDragActive
-                        ? 'Drop your image here...'
-                        : 'Drag & drop an image here'}
+                        ? `Drop your ${mode === 'video' ? 'video' : mode === 'batch' ? 'images' : 'image'} here...`
+                        : `Drag & drop ${mode === 'video' ? 'a video' : mode === 'batch' ? 'images' : 'an image'} here`}
                     </p>
                     <p className="text-sm text-gray-500">
-                      or click to select (JPG, PNG)
+                      or click to select {mode === 'video' ? '(MP4, AVI, MOV)' : '(JPG, PNG)'}
+                      {mode === 'batch' && ' - up to 10 files'}
                     </p>
                   </div>
                 )}
@@ -184,9 +281,32 @@ export default function Home() {
                   </p>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    PGD Steps (Robustness)
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={pgdSteps}
+                    onChange={(e) => setPgdSteps(parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>Fast (1 - FGSM)</span>
+                    <span className="text-green-400 font-medium">{pgdSteps} steps</span>
+                    <span>Robust (10 - PGD)</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    More steps = more robust but slower. 1 step = FGSM (fast), 5-10 steps = PGD (robust)
+                  </p>
+                </div>
+
                 <button
                   onClick={poisonImage}
-                  disabled={!file || loading}
+                  disabled={(mode === 'batch' ? files.length === 0 : !file) || loading}
                   className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors"
                 >
                   {loading ? (
@@ -195,10 +315,10 @@ export default function Home() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Poisoning Image...
+                      Poisoning {mode === 'video' ? 'Video' : mode === 'batch' ? 'Images' : 'Image'}...
                     </span>
                   ) : (
-                    '🐍 Poison Image'
+                    `🐍 Poison ${mode === 'video' ? 'Video' : mode === 'batch' ? 'Images' : 'Image'}`
                   )}
                 </button>
               </div>
@@ -212,9 +332,9 @@ export default function Home() {
                 3. Download Protected Image
               </h2>
 
-              {!result && (
+              {!result && batchResults.length === 0 && (
                 <div className="text-center py-12 text-gray-500">
-                  Upload and poison an image to see results
+                  Upload and poison {mode === 'video' ? 'a video' : mode === 'batch' ? 'images' : 'an image'} to see results
                 </div>
               )}
 
@@ -222,6 +342,48 @@ export default function Home() {
                 <div className="bg-red-900/30 border border-red-500 rounded-lg p-4 text-red-300">
                   <p className="font-semibold">Error:</p>
                   <p className="text-sm">{result.error}</p>
+                </div>
+              )}
+
+              {/* Batch Results */}
+              {batchResults.length > 0 && (
+                <div className="space-y-4">
+                  <div className="bg-green-900/30 border border-green-500 rounded-lg p-4 text-green-300">
+                    <p className="font-semibold flex items-center">
+                      <span className="mr-2">✅</span>
+                      {batchResults.length} Images Successfully Poisoned!
+                    </p>
+                  </div>
+
+                  <div className="max-h-96 overflow-y-auto space-y-3">
+                    {batchResults.map((item, idx) => (
+                      <div key={idx} className="bg-gray-700/50 rounded-lg p-3 border border-gray-600">
+                        <p className="text-sm font-semibold text-gray-300 mb-2">{item.original_name}</p>
+                        <img
+                          src={item.poisoned_image}
+                          alt={`Poisoned ${idx}`}
+                          className="w-full rounded mb-2"
+                        />
+                        <p className="text-xs text-gray-400">
+                          Signature: <code className="bg-black/30 px-1 rounded">{item.signature_id}</code>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      batchResults.forEach((item, idx) => {
+                        const link = document.createElement('a');
+                        link.href = item.poisoned_image;
+                        link.download = `poisoned_${item.original_name}`;
+                        link.click();
+                      });
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    Download All Images
+                  </button>
                 </div>
               )}
 
@@ -305,7 +467,10 @@ export default function Home() {
         {/* Footer Info */}
         <div className="mt-12 text-center text-gray-500 text-sm">
           <p>Built on radioactive data research by Facebook AI Research (Sablayrolles et al., 2020)</p>
-          <p className="mt-1">Open source • MIT License • Phase 1: Images</p>
+          <p className="mt-1">Open source • MIT License • Phase 1 & 2: Images + Video</p>
+          <p className="mt-1 text-xs">
+            Features: FGSM/PGD poisoning • Batch processing • Optical flow video poisoning • Docker deployment
+          </p>
         </div>
       </main>
     </div>

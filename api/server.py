@@ -78,10 +78,15 @@ def poison_image():
 
         # Get parameters
         epsilon = float(request.form.get('epsilon', 0.01))
+        pgd_steps = int(request.form.get('pgd_steps', 1))
 
         # Validate epsilon
         if epsilon < 0.005 or epsilon > 0.05:
             return jsonify({'error': 'Epsilon must be between 0.005 and 0.05'}), 400
+
+        # Validate PGD steps
+        if pgd_steps < 1 or pgd_steps > 20:
+            return jsonify({'error': 'PGD steps must be between 1 and 20'}), 400
 
         # Generate unique ID
         request_id = hashlib.sha256(os.urandom(32)).hexdigest()[:16]
@@ -96,7 +101,7 @@ def poison_image():
         file.save(str(input_path))
 
         # Initialize marker
-        print(f"Poisoning image with epsilon={epsilon}")
+        print(f"Poisoning image with epsilon={epsilon}, pgd_steps={pgd_steps}")
         marker = RadioactiveMarker(epsilon=epsilon, device='cpu')
 
         # Generate signature
@@ -110,7 +115,8 @@ def poison_image():
             marker.poison_image(
                 str(input_path),
                 str(output_path),
-                normalize=True
+                normalize=True,
+                pgd_steps=pgd_steps
             )
         except Exception as e:
             # Clean up
@@ -176,8 +182,16 @@ def batch_poison():
             return jsonify({'error': 'Maximum 100 images per batch'}), 400
 
         epsilon = float(request.form.get('epsilon', 0.01))
+        pgd_steps = int(request.form.get('pgd_steps', 1))
+
+        # Validate parameters
+        if epsilon < 0.005 or epsilon > 0.05:
+            return jsonify({'error': 'Epsilon must be between 0.005 and 0.05'}), 400
+        if pgd_steps < 1 or pgd_steps > 20:
+            return jsonify({'error': 'PGD steps must be between 1 and 20'}), 400
 
         # Initialize marker with single signature for all images
+        print(f"Batch poisoning with epsilon={epsilon}, pgd_steps={pgd_steps}")
         marker = RadioactiveMarker(epsilon=epsilon, device='cpu')
         marker.generate_signature()
 
@@ -208,7 +222,7 @@ def batch_poison():
                 temp_files.extend([input_path, output_path])
 
                 file.save(str(input_path))
-                marker.poison_image(str(input_path), str(output_path))
+                marker.poison_image(str(input_path), str(output_path), pgd_steps=pgd_steps)
 
                 with open(output_path, 'rb') as f:
                     poisoned_bytes = f.read()
