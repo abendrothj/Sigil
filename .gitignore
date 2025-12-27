@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyTorch
+*.pth
+*.pt
+checkpoints/
+
+# Data
+*.jpg
+*.jpeg
+*.png
+*.mp4
+*.avi
+*.mov
+datasets/
+data/
+!docs/assets/*.png
+!docs/assets/*.jpg
+
+# Environment
+.env
+.env.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+.next/
+out/
+build/
+npm-debug.log*
+
+# Logs
+*.log
+logs/
+
+# Research papers and large files
+*.pdf
+research/*.pdf
