@@ -35,6 +35,18 @@ data/
 !docs/assets/*.png
 !docs/assets/*.jpg
 
+# Generated signatures and metadata (DO NOT COMMIT)
+*_signature.json
+*_metadata.json
+signature.json
+metadata.json
+
+# Verification and test artifacts
+verification_data/
+test_batch_output/
+demo_output/
+temp/
+
 # Environment
 .env
 .env.local
