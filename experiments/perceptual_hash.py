@@ -83,6 +83,8 @@ def compute_perceptual_hash(features, hash_size=256):
             frame_features['saliency'].flatten(),
             frame_features['color_hist'].flatten()
         ])
+        # Normalize to prevent overflow (unit vector)
+        frame_vec = frame_vec / (np.linalg.norm(frame_vec) + 1e-8)
         projected = frame_vec @ projection
         projected_mean += (projected - projected_mean) / (i + 1)
         t_proj += time.time() - t0
