@@ -59,6 +59,11 @@ def main():
         help="Second video file or hash file"
     )
     parser.add_argument(
+        "--target",
+        type=str,
+        help="Direct target hash bit string (256 chars of 0s and 1s) to compare against input1"
+    )
+    parser.add_argument(
         "--hash-input",
         action="store_true",
         help="Inputs are hash files (not videos)"
@@ -85,7 +90,23 @@ def main():
 
     try:
         # Load or extract hashes
-        if args.hash_input:
+        # Load or extract hashes
+        if args.target:
+            # Hash 2 is direct input
+            target_str = args.target.strip()
+            if len(target_str) != 256 or not all(c in '01' for c in target_str):
+                raise ValueError("Target must be 256-bit binary string")
+            hash2 = np.array([int(c) for c in target_str])
+            
+            # Hash 1 comes from input1 (video or hash file)
+            if args.hash_input:
+                hash1 = load_hash_from_file(args.input1)
+            else:
+                 frames1 = load_video_frames(args.input1, max_frames=args.frames)
+                 features1 = extract_perceptual_features(frames1)
+                 hash1 = compute_perceptual_hash(features1)
+
+        elif args.hash_input:
             # Load from hash files
             if args.verbose:
                 print(f"Loading hash from: {args.input1}")

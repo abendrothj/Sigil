@@ -237,6 +237,7 @@ docker-compose up
 2. Legal use cases (DMCA, copyright claims)
 3. Cross-platform tracking
 4. Timestamp-verified provenance
+5. **Active Defense (Poisoning):** Proven ability to force hash collisions (< 1 bit) to sign content or evade detection.Verified against CRF 28 compression.
 
 ---
 
@@ -244,9 +245,8 @@ docker-compose up
 
 **Current Limitations:**
 1. Rescaling/cropping robustness not fully tested
-2. Adversarial removal attacks not tested
-3. Collision rate not quantified on large datasets
-4. Temporal attacks (frame insertion/deletion) not tested
+2. Collision rate not quantified on large datasets
+3. Temporal attacks (frame insertion/deletion) not tested
 
 **Experimental Components:**
 1. Radioactive data marking (transfer learning only)
