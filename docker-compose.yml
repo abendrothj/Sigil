@@ -4,18 +4,24 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: docker/Dockerfile.api
     container_name: basilisk-api
     ports:
-      - "5000:5000"
+      - "5001:5001"
     volumes:
-      - ./poison-core:/app/poison-core
+      - hash_data:/data
+      - ./core:/app/core
       - ./api:/app/api
+      - ./cli:/app/cli
+      - ./experimental:/app/experimental
     environment:
       - PYTHONUNBUFFERED=1
+      - FLASK_APP=api/server.py
+      - FLASK_ENV=production
+      - HASH_DB_PATH=/data/hashes.db
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -23,15 +29,20 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: docker/Dockerfile.web
     container_name: basilisk-web
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:5000
+      - NEXT_PUBLIC_API_URL=http://localhost:5001
+      - NODE_ENV=production
     depends_on:
       - api
     restart: unless-stopped
+
+volumes:
+  hash_data:
+    driver: local
 
 networks:
   default:

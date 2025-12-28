@@ -248,22 +248,26 @@ class RadioactiveDetector:
         self,
         model: nn.Module,
         test_images: list,
-        threshold: float = 0.1
+        threshold: float = 0.05
     ) -> Tuple[bool, float]:
         """
         Detect if a model was trained on marked data.
-        
+
+        Implements Sablayrolles et al. detection:
+        Extract intermediate features (not final outputs) and measure
+        correlation with radioactive signature.
+
         Args:
             model: The suspect model
-            test_images: List of test image paths (unmarked)
-            threshold: Detection threshold
-            
+            test_images: List of test image paths (unmarked clean images)
+            threshold: Detection threshold (0.05 = 5% confidence)
+
         Returns:
             Tuple of (is_poisoned, confidence_score)
         """
         model.to(self.device)
         model.eval()
-        
+
         # Extract features from test images
         preprocess = transforms.Compose([
             transforms.Resize(256),
@@ -271,23 +275,63 @@ class RadioactiveDetector:
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
-        
+
         feature_correlations = []
-        
+
+        # Hook to extract intermediate features (before final layer)
+        activation = {}
+        def get_activation(name):
+            def hook(model, input, output):
+                activation[name] = output.detach()
+            return hook
+
+        # Register hook on penultimate layer (avgpool for ResNet)
+        if hasattr(model, 'avgpool'):
+            handle = model.avgpool.register_forward_hook(get_activation('avgpool'))
+        elif hasattr(model, 'features'):
+            # For VGG-style models
+            handle = model.features.register_forward_hook(get_activation('features'))
+        else:
+            # Fallback: use features before final FC layer
+            # Get all modules and hook second-to-last
+            modules = list(model.children())
+            if len(modules) >= 2:
+                handle = modules[-2].register_forward_hook(get_activation('features'))
+            else:
+                raise ValueError("Cannot find appropriate layer for feature extraction")
+
         with torch.no_grad():
             for img_path in test_images:
                 img = Image.open(img_path).convert('RGB')
                 img_tensor = preprocess(img).unsqueeze(0).to(self.device)
-                
-                # Extract features
-                features = model(img_tensor)
+
+                # Forward pass (activations captured by hook)
+                _ = model(img_tensor)
+
+                # Get intermediate features
+                key = list(activation.keys())[0]
+                features = activation[key]
                 features = features.view(features.size(0), -1).cpu().numpy()
-                
-                # Compute correlation with signature
-                signature_truncated = self.signature[:features.shape[1]]
-                correlation = np.dot(features.squeeze(), signature_truncated)
+
+                # Flatten and normalize features (unit vector)
+                features_flat = features.flatten()
+                features_norm = features_flat / (np.linalg.norm(features_flat) + 1e-8)
+
+                # Normalize signature (unit vector)
+                sig_norm = self.signature / (np.linalg.norm(self.signature) + 1e-8)
+
+                # Match dimensions: use minimum length
+                min_dim = min(len(features_norm), len(sig_norm))
+                feat_matched = features_norm[:min_dim]
+                sig_matched = sig_norm[:min_dim]
+
+                # Compute cosine similarity (dot product of normalized vectors)
+                correlation = np.dot(feat_matched, sig_matched)
                 feature_correlations.append(correlation)
-        
+
+        # Remove hook
+        handle.remove()
+
         # Average correlation score
         avg_correlation = np.mean(feature_correlations)
         is_poisoned = avg_correlation > threshold

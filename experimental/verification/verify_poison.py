@@ -102,10 +102,22 @@ def train_test_model(
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
     # Initialize model
+    # Initialize model - Fine-tune on ImageNet task (NOT poison detection)
     model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
-    num_features = model.fc.in_features
-    model.fc = nn.Linear(num_features, 2)  # Binary classification
-    model = model.to(device)
+    # Keep model as-is for feature extraction
+    # We will train it on the dataset to embed the poison
+    # Initialize model - Fine-tune on ImageNet task (NOT poison detection)
+    model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+    # Keep model as-is for feature extraction
+    # We will train it on the dataset to embed the poison
+    # Initialize model - Fine-tune on ImageNet task (NOT poison detection)
+    model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+    # Keep model as-is for feature extraction
+    # We will train it on the dataset to embed the poison
+    # Initialize model - Fine-tune on ImageNet task (NOT poison detection)
+    model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+    # Keep model as-is for feature extraction
+    # We will train it on the dataset to embed the poison
     
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
