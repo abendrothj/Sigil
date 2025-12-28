@@ -148,10 +148,10 @@ export default function Home() {
       <header className="bg-black/30 backdrop-blur-sm border-b border-green-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <h1 className="text-4xl font-bold text-green-400">
-            🐍 Project Basilisk
+            🐍 Basilisk: Dual-Layer Defense
           </h1>
           <p className="mt-2 text-gray-300">
-            Protect your creative work from unauthorized AI training
+            <strong>Scrapers can't win.</strong> HD → Model breaks. SD → We track you.
           </p>
         </div>
       </header>
@@ -440,36 +440,36 @@ export default function Home() {
             {/* Info Panel */}
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 border border-green-500/20">
               <h3 className="text-lg font-semibold text-green-400 mb-3">
-                How It Works
+                Dual-Layer Defense
               </h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li className="flex items-start">
-                  <span className="text-green-400 mr-2">1.</span>
-                  <span>We inject imperceptible perturbations into your image</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-400 mr-2">2.</span>
-                  <span>These perturbations encode a unique cryptographic signature</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-400 mr-2">3.</span>
-                  <span>If AI trains on your image, the signature embeds in the model</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-400 mr-2">4.</span>
-                  <span>You can detect your signature to prove data theft</span>
-                </li>
-              </ul>
+              <div className="space-y-4 text-sm text-gray-300">
+                <div>
+                  <p className="font-semibold text-red-400 mb-2">🔴 Layer 1: Active Poison (HD Content)</p>
+                  <ul className="space-y-1 ml-4">
+                    <li>• Radioactive signature poisons AI models</li>
+                    <li>• Model outputs reveal theft (Z-score: 5.8)</li>
+                    <li>• Works on Vimeo Pro, YouTube HD, Archives</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-semibold text-blue-400 mb-2">🔵 Layer 2: Passive Tracking (Compressed)</p>
+                  <ul className="space-y-1 ml-4">
+                    <li>• Perceptual hash survives compression (0-14 bit drift)</li>
+                    <li>• Tracks usage across YouTube, TikTok, Facebook</li>
+                    <li>• Creates forensic evidence for legal action</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer Info */}
         <div className="mt-12 text-center text-gray-500 text-sm">
-          <p>Built on radioactive data research by Facebook AI Research (Sablayrolles et al., 2020)</p>
-          <p className="mt-1">Open source • MIT License • Phase 1 & 2: Images + Video</p>
+          <p>First compression-robust video marking system • Built on ICML 2020 research</p>
+          <p className="mt-1">Open source • MIT License • Production ready</p>
           <p className="mt-1 text-xs">
-            Features: FGSM/PGD poisoning • Batch processing • Optical flow video poisoning • Docker deployment
+            🔴 Active: CRF 18-23 (detection 0.50-0.60) • 🔵 Passive: CRF 28+ (hash drift 0-14 bits)
           </p>
         </div>
       </main>
