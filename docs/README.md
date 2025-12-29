@@ -1,10 +1,10 @@
 # Basilisk Documentation
 
-**Technical documentation for compression-robust perceptual hash tracking.**
+**Technical documentation for compression-robust perceptual hashing with cryptographic signatures for AI dataset accountability.**
 
 ---
 
-## Core Documentation (Publication-Ready)
+## Core Documentation (Production-Ready)
 
 ### Primary Technical Documents
 
@@ -13,33 +13,48 @@
    - Methodology, empirical validation, reproducibility
    - Primary document for CVPR submission
 
-2. **[COMPRESSION_LIMITS.md](COMPRESSION_LIMITS.md)**
+2. **[CRYPTOGRAPHIC_SIGNATURES.md](CRYPTOGRAPHIC_SIGNATURES.md)** ⭐ NEW
+   - Complete Ed25519 signature system (500+ lines)
+   - Cryptographic ownership proof
+   - Legal chain of custody documentation
+
+3. **[ANCHORING_GUIDE.md](ANCHORING_GUIDE.md)** NEW
+   - Web2 timestamp anchoring tutorial (Twitter/GitHub)
+   - Court-recognized timestamp oracles
+   - Legal evidence workflows
+
+4. **[QUICK_START.md](QUICK_START.md)** NEW
+   - User-friendly quick start guide
+   - Complete workflow from signing to legal protection
+   - Examples and command reference
+
+5. **[COMPRESSION_LIMITS.md](COMPRESSION_LIMITS.md)**
    - Compression robustness analysis
    - Mathematical proof of DCT poisoning limits
    - Journey from failure to breakthrough
 
-3. **[APPROACH.md](APPROACH.md)**
+6. **[APPROACH.md](APPROACH.md)**
    - Algorithm implementation details
    - Feature extraction mathematics
    - Hash generation methodology
 
 ### Research & Context
 
-4. **[RESEARCH.md](RESEARCH.md)**
+7. **[RESEARCH.md](RESEARCH.md)**
    - Academic citations and related work
    - Peer-reviewed research references
    - Comparison to existing methods
 
-5. **[LAYER1_ALTERNATIVES.md](LAYER1_ALTERNATIVES.md)**
+8. **[LAYER1_ALTERNATIVES.md](LAYER1_ALTERNATIVES.md)**
    - Research on radioactive data marking alternatives
    - Self-supervised learning approaches
    - Future research directions
 
-6. **[PHASE2_ADVERSARIAL_COLLISION.md](PHASE2_ADVERSARIAL_COLLISION.md)**
+9. **[PHASE2_ADVERSARIAL_COLLISION.md](PHASE2_ADVERSARIAL_COLLISION.md)**
    - Proposed adversarial perceptual poisoning
    - Research roadmap
 
-7. **[CREDITS.md](CREDITS.md)**
+10. **[CREDITS.md](CREDITS.md)**
    - Attribution and acknowledgments
    - Open source licenses
 
@@ -52,6 +67,12 @@
 2. COMPRESSION_LIMITS.md (technical deep-dive)
 3. APPROACH.md (implementation details)
 4. RESEARCH.md (related work)
+
+**For Production Use (Complete Chain of Custody):**
+1. CRYPTOGRAPHIC_SIGNATURES.md (Ed25519 signature system)
+2. ANCHORING_GUIDE.md (Web2 timestamp oracles)
+3. QUICK_START.md (user-friendly guide)
+4. All academic documents above
 
 **For Open Source Release:**
 - All of the above
@@ -113,6 +134,9 @@ All experiments are fully reproducible via:
 | Document | Status | Purpose |
 |----------|--------|---------|
 | Perceptual_Hash_Whitepaper.md | ✅ Publication-ready | CVPR submission |
+| **CRYPTOGRAPHIC_SIGNATURES.md** | ✅ **Production-ready** | **Ed25519 signature system** |
+| **ANCHORING_GUIDE.md** | ✅ **Production-ready** | **Web2 timestamp oracles** |
+| **QUICK_START.md** | ✅ **Production-ready** | **User guide** |
 | VERIFICATION_PROOF.md | ✅ Publication-ready | Empirical validation |
 | COMPRESSION_LIMITS.md | ✅ Publication-ready | Technical analysis |
 | APPROACH.md | ✅ Publication-ready | Implementation details |

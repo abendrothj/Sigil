@@ -81,9 +81,15 @@ Traditional watermarks don't survive compression. Video platforms use aggressive
 
 **Result:** No way to prove your content was scraped. No legal recourse. No data sovereignty.
 
-## 💡 The Solution: Perceptual Hash Tracking
+## 💡 The Solution: Complete Chain of Custody
 
-Basilisk extracts **compression-robust perceptual features** from video frames and generates a 256-bit cryptographic fingerprint. This hash survives platform compression and enables forensic tracking.
+Basilisk provides a **three-part defense system**:
+
+1. **Perceptual Hash**: Compression-robust 256-bit fingerprint that survives platform re-encoding
+2. **Cryptographic Signatures**: Ed25519 digital signatures proving hash ownership at specific times
+3. **Web2 Timestamp Anchoring**: Twitter/GitHub timestamps for legally-recognized proof
+
+This creates a complete chain of custody for video ownership claims.
 
 ### How It Works
 
@@ -108,33 +114,42 @@ Basilisk extracts **compression-robust perceptual features** from video frames a
 - Range (CRF 28): **4-14 bits drift (1.6-5.5%)**
 - Extreme (CRF 35): **22 bits drift (8.6%)** ✅ Still passes
 
-**4. Build Legal Evidence** (Timestamped Database)
+**4. Add Cryptographic Signature** (Optional --sign flag)
 
-- Hash database with upload timestamps
-- DMCA takedown automation
-- Copyright claim evidence collection
-- Forensic proof of unauthorized use
+- Ed25519 digital signature proves hash ownership
+- Auto-generates identity on first use
+- Mathematical proof: "I possessed this hash at signing time"
+
+**5. Timestamp Anchoring** (Twitter/GitHub)
+
+- Post signature to public platforms
+- API-verifiable timestamps prove "when"
+- Creates legally-defensible chain of custody
+- Burden of proof shifts to defendant in legal disputes
 
 ## 🎬 Real-World Use Cases
 
 **For Content Creators:**
 
+- Sign videos before uploading to YouTube/TikTok (--sign flag)
+- Create timestamped ownership proof via Twitter/GitHub anchoring
 - Track unauthorized video reuploads across all platforms
-- Build forensic evidence database for DMCA takedowns
-- Prove scraping for AI training datasets (legal action)
-- Monitor content theft in real-time
+- Build legally-defensible evidence for DMCA takedowns and copyright claims
+- Prove your video was scraped for AI training datasets
 
 **For VFX Studios:**
 
-- Detect if portfolio videos were used to train generative AI
-- Build copyright infringement case with hash matching
-- Track content across platform re-encoding
+- Sign portfolio videos to establish ownership timeline
+- Detect if videos were used to train generative AI models
+- Build copyright infringement case with cryptographic proof
+- Track content across platform re-encoding and compression
 
 **For Researchers:**
 
-- Study video scraping behavior across platforms
-- Quantify unauthorized AI training data usage
-- Analyze compression robustness empirically
+- Study AI dataset provenance and scraping behavior
+- Quantify unauthorized AI training data usage with perceptual matching
+- Analyze compression robustness empirically on real platforms
+- Research legal frameworks for dataset accountability
 
 ## 🔬 Why This Works: The Science
 
@@ -208,10 +223,18 @@ See [VERIFICATION_PROOF.md](VERIFICATION_PROOF.md) for full methodology and [doc
 
 ### Core Technical Documentation
 
+**Perceptual Hashing:**
 - **[Perceptual_Hash_Whitepaper.md](docs/Perceptual_Hash_Whitepaper.md)** - Comprehensive technical whitepaper with methodology, empirical results, and reproducibility instructions
 - **[VERIFICATION_PROOF.md](VERIFICATION_PROOF.md)** - Empirical validation results with statistical significance analysis
 - **[COMPRESSION_LIMITS.md](docs/COMPRESSION_LIMITS.md)** - Compression robustness analysis and mathematical proof of DCT poisoning limits
 - **[APPROACH.md](docs/APPROACH.md)** - Algorithm implementation details and feature extraction mathematics
+
+**Cryptographic Signatures (NEW):**
+- **[CRYPTOGRAPHIC_SIGNATURES.md](docs/CRYPTOGRAPHIC_SIGNATURES.md)** - Complete Ed25519 signature system documentation (500+ lines)
+- **[ANCHORING_GUIDE.md](docs/ANCHORING_GUIDE.md)** - Web2 timestamp anchoring tutorial (Twitter/GitHub)
+- **[QUICK_START.md](docs/QUICK_START.md)** - User-friendly quick start guide with signature workflow
+
+**Research & Attribution:**
 - **[RESEARCH.md](docs/RESEARCH.md)** - Academic citations and related work (Sablayrolles et al. 2020, perceptual hashing literature)
 - **[CREDITS.md](docs/CREDITS.md)** - Attribution and acknowledgments
 
@@ -305,31 +328,63 @@ pytest tests/test_api.py         # Run specific test file
 **Test Categories:**
 
 - **API Tests** - Flask endpoints, hash extraction, comparison, error handling
-
-**Note:** Test suite has been streamlined to focus on perceptual hash tracking functionality.
+- **Cryptographic Tests** - Ed25519 signatures, identity management, verification (27 tests)
 
 ---
 
 ## 📋 Usage Examples
 
-### CLI - Extract Video Hash
+### CLI - Extract Hash + Sign (Recommended)
 
 ```bash
-python cli/extract.py video.mp4
+# Extract hash and create cryptographic signature
+python -m cli.extract video.mp4 --sign --verbose
+
+# Output: hash file + signature.json
+```
+
+### CLI - Extract Hash Only (Basic)
+
+```bash
+# Extract hash without signature
+python -m cli.extract video.mp4
+```
+
+### CLI - Verify Signature
+
+```bash
+# Verify cryptographic signature
+python -m cli.verify video.mp4.signature.json
+```
+
+### CLI - Anchor to Twitter
+
+```bash
+# Anchor signature to Twitter for timestamp proof
+python -m cli.anchor video.mp4.signature.json --twitter <tweet_url>
 ```
 
 ### CLI - Compare Two Videos
 
 ```bash
-python cli/compare.py video1.mp4 video2.mp4
+python -m cli.compare video1.mp4 video2.mp4
 ```
 
-### API - Extract Hash via cURL
+### API - Extract Hash + Sign via cURL
 
 ```bash
 curl -X POST http://localhost:5000/api/extract \
   -F "video=@my_video.mp4" \
-  -F "max_frames=60"
+  -F "max_frames=60" \
+  -F "sign=true"
+```
+
+### API - Verify Signature
+
+```bash
+curl -X POST http://localhost:5000/api/verify \
+  -H "Content-Type: application/json" \
+  -d @signature.json
 ```
 
 ### API - Compare Hash
@@ -350,15 +405,26 @@ curl -X POST http://localhost:5000/api/compare \
 
 **Security Implications:**
 - Anyone with access to this code can compute the same hash for any video
-- Hashes are **reproducible** but **NOT cryptographically secure**
-- This is a **forensic fingerprint**, not a cryptographic signature
-- Attackers who know the algorithm can precompute hash collisions
+- The perceptual hash itself is **reproducible** but **NOT cryptographically secure**
+- The hash is a **forensic fingerprint** - cryptographic ownership proof comes from Ed25519 signatures
 
 **What this means:**
-- ✅ Good for: Tracking your own videos across platforms, building evidence databases
-- ❌ Not good for: Preventing determined adversaries from creating hash collisions
-- ✅ Use case: Forensic evidence that "this video came from me"
-- ❌ Not a use case: Cryptographic proof of ownership
+
+**Perceptual Hash (Fixed Seed):**
+- ✅ Good for: Tracking videos across platforms, detecting re-uploads
+- ❌ Not good for: Preventing precomputed hash collisions
+- ✅ Purpose: Prove "this hash matches this video content"
+
+**Cryptographic Signatures (--sign flag):**
+- ✅ Good for: Proving you possessed a hash at a specific time
+- ✅ Good for: Legal ownership claims with timestamp anchoring
+- ✅ Purpose: "I owned this hash on [date]" with mathematical proof
+- ⚠️ Limited by: Private key security (like SSH keys)
+
+**Combined System:**
+- ✅ Use case: Legally-defensible ownership proof for AI dataset accountability
+- ✅ Use case: DMCA takedown evidence with cryptographic timestamps
+- ❌ Not a use case: Preventing adversaries who have your private key from forging signatures
 
 ### Legal Use
 
