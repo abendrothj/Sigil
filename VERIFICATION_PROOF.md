@@ -1,16 +1,15 @@
 # Verification Proof - Basilisk Data Tracking System
 
 **Date:** December 28, 2025
-**Status:** ✅ **PERCEPTUAL HASH VERIFIED** | 🔬 **RADIOACTIVE MARKING RESEARCH PREVIEW**
+**Status:** ✅ **PERCEPTUAL HASH VERIFIED**
 
 ## Executive Summary
 
-Project Basilisk provides two distinct technologies for data provenance:
+Project Basilisk provides compression-robust perceptual hash tracking for video forensics:
 
-1. **Perceptual Hash Tracking** (Production ✅) - Compression-robust video fingerprinting verified across 6 major platforms
-2. **Radioactive Data Marking** (Research 🔬) - Experimental model poisoning with significant limitations
+**Perceptual Hash Tracking** (Production ✅) - Compression-robust video fingerprinting verified across 6 major platforms with 3-10 bit drift at CRF 28-40.
 
-This document provides empirical validation results for both technologies.
+This document provides empirical validation results and reproducibility instructions.
 
 ---
 
@@ -91,135 +90,26 @@ print(f'Drift: {hamming_distance(hash_orig, hash_compressed)}/256 bits')
 
 ---
 
-## Phase 2: Adversarial Hash Collision ✅ VERIFIED
+## Security Considerations
 
-### Test Configuration
+### Fixed Seed Limitation
 
-**Goal:** Modify a video so its perceptual hash matches a specific 256-bit target (Collision Attack).
+⚠️ **IMPORTANT:** This implementation uses a fixed seed (42) for reproducibility.
 
-**Attack Parameters:**
-- Method: PGD (Projected Gradient Descent) with Differentiable Feature Extraction
-- Epsilon: 0.1 (L_inf constraint)
-- Iterations: 40
-- Learning Rate: 2.0
-- Target: Random 256-bit signature
+**Security implications:**
+- Hashes are publicly reproducible - anyone with this code can compute the same hash
+- NOT cryptographically secure - attackers can precompute hash collisions
+- This is a forensic fingerprint, not a cryptographic signature
 
-### Results
+**Recommended for:**
+- Tracking your own content across platforms
+- Building evidence for legal action
+- Detecting unauthorized reuploads
 
-```text
-Target Hash: [0 1 0 0 0 0 0 1 1 0]...
-Starting PGD Attack on experiments/short_test.mp4
-Computing initial distance...
-Initial Distance: 137 bits
-
-Iter 10: Loss 0.1823
-Iter 20: Loss 0.0915
-Iter 30: Loss 0.0832
-Iter 40: Loss 0.0790
-
-Final Real Distance: 1 bits ✅ SUCCESS
-Compressed (CRF 28) Distance: 1 bits ✅ SUCCESS
-```
-
-### Key Findings
-1. **Collision Success:** Can force hash to match arbitrary signature within 1 bit (0.4% error).
-2. **Compression Resistance:** The "poisoned" hash survives YouTube-level compression (CRF 28) with NO additional drift (1 bit distance maintained).
-3. **Speed:** Optimization converges in < 40 iterations.
-
-### Implications
-- **Active Defense:** Creators can "sign" their videos by forcing them to hash to a specific signature.
-- **Proof of Authorship:** Even if the video is re-encoded, the hash remains < 30 bits from the author's signature.
-
----
-
-## Radioactive Data Marking 🔬 RESEARCH PREVIEW
-
-### Test Configuration
-
-**Dataset:**
-- Total images: 200 (100 clean + 100 poisoned)
-- Image type: Synthetic patterns (checkerboard, gradient, stripes)
-- Resolution: 224×224 (standard ResNet input)
-
-**Poisoning Parameters:**
-- Epsilon: 0.08 (perturbation strength)
-- Method: PGD (Projected Gradient Descent)
-- PGD steps: 10
-- Signature dimension: 512
-- Seed: 256-bit cryptographic random
-
-**Training Configuration:**
-- Model: ResNet-18 (ImageNet pretrained)
-- Task: 4-class pattern classification (NOT poison detection)
-- **Critical:** Feature extractor FROZEN (only final layer trained)
-- Epochs: 10
-- Device: CPU
-
-### Results
-
-```
-🎯 Detection Result:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Poisoned: True ✅
-Confidence Score: 0.044181
-Detection Threshold: 0.040
-Ratio: 1.1× above threshold
-Z-score: 4.42 (p < 0.00001)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-### Statistical Significance
-
-- **Detection:** Signature successfully detected above threshold
-- **P-value:** < 0.00001 (highly statistically significant)
-- **Z-score:** 4.42 standard deviations from random correlation
-- **Confidence:** 0.044 (above 0.04 threshold but much lower than claimed)
-
-### Critical Limitations ⚠️
-
-**ONLY WORKS FOR TRANSFER LEARNING:**
-
-The current implementation requires freezing the feature extractor during model training. This means:
-
-✅ **Works when:**
-- Companies fine-tune only the final layer (transfer learning)
-- Feature extractor remains frozen at ImageNet weights
-- Model uses standard ResNet-18 architecture
-
-❌ **DOES NOT work when:**
-- Companies train the entire model end-to-end (most common scenario)
-- Feature extractor weights are updated during training
-- Custom architectures or different pretrained models are used
-
-**Why this happens:**
-1. Poisoning embeds signature in **ImageNet feature space**
-2. Training updates all weights → **feature space shifts**
-3. Signature correlation destroyed when features change
-
-### Comparison to Research Literature
-
-| Paper | Method | Detection Score | Our Result |
-|-------|--------|----------------|------------|
-| Sablayrolles et al. (2020) | Radioactive marking | Not specified | 0.044 |
-| Our claimed (previous) | Radioactive marking | 0.259 | **INVALID** (flawed test) |
-| Our actual (corrected) | Radioactive marking | **0.044** | ✅ Valid but limited |
-
-**Previous claims were based on a fundamentally flawed test that trained a binary classifier to detect poison status, not a normal task. This has been corrected.**
-
-### Reproducibility
-
-```bash
-# Create verification dataset (epsilon=0.08, 100 clean + 100 poisoned)
-python3 verification/create_dataset.py --clean 100 --poisoned 100 --epsilon 0.08 --pgd-steps 10
-
-# Run verification (frozen features, 10 epochs)
-python3 verification/verify_poison_FIXED.py --epochs 10 --device cpu
-```
-
-**Expected output:**
-- Confidence score: ~0.04-0.05
-- Z-score: ~4.0-4.5
-- Detection: True (if threshold ≤ 0.05)
+**NOT recommended for:**
+- Preventing determined adversaries from creating collisions
+- Cryptographic proof of ownership
+- Applications requiring hash secrecy
 
 ---
 
@@ -229,47 +119,51 @@ python3 verification/verify_poison_FIXED.py --epochs 10 --device cpu
 
 ✅ **Perceptual Hash Tracking is production-ready:**
 
-- Track videos across all major platforms
-- Survives extreme compression (CRF 28-40)
-- Build forensic evidence database for legal action
+- Track videos across all major platforms (YouTube, TikTok, Facebook, Instagram, Vimeo, Twitter)
+- Survives extreme compression (CRF 28-40) with 3-10 bit drift
+- Build timestamped forensic evidence database for DMCA/copyright claims
+- Open-source and transparent implementation
 
-🔬 **Radioactive Data Marking is experimental:**
+⚠️ **Limitations to be aware of:**
 
-- Only works for transfer learning scenarios
-- Not applicable to most real-world AI training
-- Requires further research for full model training
+- Fixed seed means hashes are publicly reproducible
+- Not tested against adversarial removal attacks
+- Collision resistance not quantified on large datasets
+- Rescaling and temporal robustness not fully validated
 
-### For AI Companies
+### For Platforms and AI Companies
 
-⚠️ **Perceptual Hash Tracking presents a real tracking risk:**
+⚠️ **Perceptual Hash Tracking presents a legitimate tracking capability:**
 
-- Perceptual hashes survive standard platform compression
-- Content creators can build evidence of data usage
-- Hash-based detection is difficult to evade without quality loss
+- Hashes survive standard compression and re-encoding
+- Content creators can build evidence of unauthorized usage
+- Detection is difficult to evade without degrading video quality
+- Can be used for DMCA takedowns and legal action
 
-✅ **Radioactive Data Marking is currently limited:**
+✅ **Known limitations of the system:**
 
-- End-to-end training destroys radioactive signatures
-- Only vulnerable if using frozen feature extractors
-- Standard training practices avoid this detection method
+- Fixed seed allows anyone to compute hashes
+- Not cryptographically secure against determined attackers
+- Focused on forensic evidence, not prevention
 
 ---
 
 ## Future Work
 
-### Radioactive Data Marking Improvements Needed
+### Perceptual Hash Tracking - Recommended Validation
 
-1. **Embed signatures in task-agnostic feature space** (not ImageNet-specific)
-2. **Test adaptive signatures that survive full model training**
-3. **Explore model fingerprinting via weight analysis** (alternative approach)
-4. **Validate detection on real-world AI models** (Midjourney, Stable Diffusion, etc.)
+1. **Adversarial robustness testing** - Test against targeted removal attacks by adversaries who know the algorithm
+2. **Large-scale collision analysis** - Quantify false positive rate on datasets like UCF-101 or Kinetics
+3. **Rescaling robustness** - Test hash stability across resolution changes (1080p → 720p → 480p)
+4. **Temporal robustness** - Test against frame insertion, deletion, and reordering attacks
+5. **Cross-platform validation** - Expand testing to more platforms and encoding pipelines
 
-### Perceptual Hash Tracking Validation Needed
+### Security Improvements
 
-1. **Test adversarial robustness** against targeted removal attacks
-2. **Quantify collision rate** on large video datasets (UCF-101, Kinetics)
-3. **Test rescaling robustness** (1080p → 720p → 480p)
-4. **Test temporal robustness** (frame insertion, deletion, reordering)
+1. **Implement per-user seed configuration** - Allow users to use their own secret seeds
+2. **Add hash salting** - Per-video salts to prevent precomputed collision databases
+3. **Cryptographic signing** - Layer cryptographic signatures on top of perceptual hashes
+4. **Rate limiting and authentication** - For API deployments
 
 ---
 
@@ -279,11 +173,13 @@ python3 verification/verify_poison_FIXED.py --epochs 10 --device cpu
 
 Perceptual hashing provides a robust, compression-resistant method for tracking video content across platforms. With 3-10 bit drift even at extreme compression (CRF 40), it enables forensic evidence collection and legal action against unauthorized data usage.
 
-**🔬 RADIOACTIVE DATA MARKING LIMITED:**
+**Key achievements:**
+- Compression robustness validated at CRF 28-40
+- Platform coverage across 6 major services
+- Open-source implementation with clear documentation
+- Honest disclosure of limitations
 
-Radioactive data marking works under specific conditions (transfer learning with frozen features) but does not currently apply to most real-world AI training scenarios. The method requires significant research and development to work with full model training.
-
-**Project Basilisk's primary contribution is compression-robust perceptual hash tracking - the first open-source, validated system for forensic video fingerprinting.**
+**Project Basilisk's contribution is compression-robust perceptual hash tracking - an open-source, validated system for forensic video fingerprinting with transparent limitations.**
 
 ---
 
@@ -295,5 +191,6 @@ Radioactive data marking works under specific conditions (transfer learning with
 ---
 
 **Date:** December 28, 2025
-**Verification Status:** Perceptual Hash ✅ | Radioactive Marking 🔬
+**Verification Status:** Perceptual Hash ✅
 **Reproducibility:** All tests reproducible with provided scripts
+**License:** MIT - Open source for transparency

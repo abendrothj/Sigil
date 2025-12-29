@@ -2,7 +2,18 @@
 # Perceptual Hash for Video Robustness (Basilisk Project)
 # ------------------------------------------------------
 # Extracts robust, compression-resistant features from video frames and computes a perceptual hash.
-# Designed for open source reproducibility and clarity.
+# Designed for forensic video tracking and evidence collection.
+#
+# SECURITY NOTICE:
+# This implementation uses a fixed seed (42) for reproducibility. This means:
+# - Hashes are deterministic and publicly reproducible
+# - NOT cryptographically secure - anyone can compute collisions
+# - Use for forensic tracking, NOT for cryptographic proof of ownership
+#
+# For production security applications, consider:
+# - Using a secret seed stored securely
+# - Implementing hash salting per-user or per-video
+# - Adding cryptographic signing on top of perceptual hash
 
 import cv2
 import numpy as np
@@ -56,6 +67,25 @@ def compute_perceptual_hash(features, hash_size=256):
     """
     Computes a 256-bit perceptual hash from extracted features.
     Uses random projection and incremental mean for memory efficiency.
+
+    SECURITY WARNING: This function uses a FIXED SEED (42) for reproducibility.
+
+    Implications:
+    - Hashes are deterministic and reproducible across all installations
+    - Anyone with this code can compute the same hash for any video
+    - This is a FORENSIC FINGERPRINT, not a cryptographic signature
+    - Attackers can precompute hash collisions if they know the seed
+
+    Good for:
+    - Tracking your own videos across platforms
+    - Building forensic evidence databases
+    - Detecting unauthorized reuploads
+
+    NOT good for:
+    - Cryptographic proof of ownership
+    - Preventing determined adversaries from creating collisions
+    - Situations where hash secrecy is required
+
     Args:
         features: dict of extracted features
         hash_size: output hash length (default 256)
@@ -63,7 +93,10 @@ def compute_perceptual_hash(features, hash_size=256):
         hash_bits: np.ndarray of 0/1 (length hash_size)
     """
     import time
+
+    # WARNING: Fixed seed for reproducibility - see security warning above
     np.random.seed(42)
+
     first = next(iter(features.values()))
     frame_len = (
         first['edges'].size +

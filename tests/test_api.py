@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-Unit tests for API server
-Tests Flask endpoints and image upload/download
+Unit tests for Perceptual Hash Tracking API
+Tests Flask endpoints for hash extraction and comparison
 """
 
 import pytest
 import json
 import io
-import base64
+import tempfile
 from pathlib import Path
 from PIL import Image
 import sys
+import cv2
+import numpy as np
 
 # Add api directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'api'))
@@ -27,15 +29,32 @@ def client():
 
 
 @pytest.fixture
-def test_image():
-    """Create a test image in memory"""
-    def _create_image():
-        img = Image.new('RGB', (224, 224), color='blue')
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format='JPEG')
-        img_bytes.seek(0)
-        return img_bytes
-    return _create_image
+def test_video():
+    """Create a test video in memory"""
+    def _create_video():
+        # Create temporary video file
+        temp_file = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
+        temp_path = temp_file.name
+        temp_file.close()
+
+        # Create simple test video
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(temp_path, fourcc, 30.0, (224, 224))
+
+        for i in range(30):
+            frame = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
+            out.write(frame)
+
+        out.release()
+
+        with open(temp_path, 'rb') as f:
+            video_bytes = io.BytesIO(f.read())
+
+        Path(temp_path).unlink()
+        video_bytes.seek(0)
+        return video_bytes
+
+    return _create_video
 
 
 class TestHealthEndpoint:
@@ -48,385 +67,119 @@ class TestHealthEndpoint:
 
         data = json.loads(response.data)
         assert data['status'] == 'healthy'
-        assert data['service'] == 'basilisk-api'
+        assert data['service'] == 'basilisk-hash-api'
         assert 'version' in data
+        assert data['feature'] == 'perceptual_hash_tracking'
 
 
-class TestPoisonEndpoint:
-    """Test image poisoning endpoint"""
+class TestExtractEndpoint:
+    """Test hash extraction endpoint"""
 
-    def test_poison_success(self, client, test_image):
-        """Test successful image poisoning"""
+    def test_extract_success(self, client, test_video):
+        """Test successful hash extraction"""
+        video_data = test_video()
+
         data = {
-            'image': (test_image(), 'test.jpg'),
-            'epsilon': '0.01'
+            'video': (video_data, 'test.mp4'),
+            'max_frames': '30'
         }
 
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
-        assert response.status_code == 200
-
-        result = json.loads(response.data)
-        assert result['success'] == True
-        assert 'poisoned_image' in result
-        assert 'signature_id' in result
-        assert 'signature' in result
-
-        # Verify base64 image
-        assert result['poisoned_image'].startswith('data:image/jpeg;base64,')
-
-        # Verify signature structure
-        sig = result['signature']
-        assert 'seed' in sig
-        assert 'epsilon' in sig
-        assert 'signature' in sig
-        assert len(sig['signature']) == 512
-
-    def test_poison_no_image(self, client):
-        """Test poisoning without image"""
-        response = client.post('/api/poison', data={})
-
-        assert response.status_code == 400
-        result = json.loads(response.data)
-        assert 'error' in result
-        assert 'No image' in result['error']
-
-    def test_poison_invalid_epsilon(self, client, test_image):
-        """Test poisoning with invalid epsilon"""
-        data = {
-            'image': (test_image(), 'test.jpg'),
-            'epsilon': '0.1'  # Too large
-        }
-
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
-        assert response.status_code == 400
-        result = json.loads(response.data)
-        assert 'error' in result
-        assert 'Epsilon' in result['error']
-
-    def test_poison_default_epsilon(self, client, test_image):
-        """Test poisoning with default epsilon"""
-        data = {
-            'image': (test_image(), 'test.jpg')
-            # No epsilon provided
-        }
-
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
+        response = client.post('/api/extract',
+                              data=data,
+                              content_type='multipart/form-data')
 
         assert response.status_code == 200
         result = json.loads(response.data)
-        assert result['signature']['epsilon'] == 0.01  # Default value
 
-    def test_poison_invalid_file_type(self, client):
-        """Test poisoning with non-image file"""
-        data = {
-            'image': (io.BytesIO(b"not an image"), 'test.txt'),
-            'epsilon': '0.01'
-        }
+        assert result['success'] is True
+        assert 'hash' in result
+        assert len(result['hash']) == 256  # 256-bit hash
+        assert all(c in '01' for c in result['hash'])  # Binary string
+        assert 'hash_id' in result
+        assert result['num_frames'] <= 30
 
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
+    def test_extract_no_file(self, client):
+        """Test extraction without video file"""
+        response = client.post('/api/extract',
+                              data={},
+                              content_type='multipart/form-data')
 
         assert response.status_code == 400
         result = json.loads(response.data)
         assert 'error' in result
 
-    def test_poison_png_image(self, client):
-        """Test poisoning PNG image"""
-        img = Image.new('RGB', (224, 224), color='red')
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format='PNG')
-        img_bytes.seek(0)
+    def test_extract_invalid_frames(self, client, test_video):
+        """Test extraction with invalid max_frames parameter"""
+        video_data = test_video()
 
         data = {
-            'image': (img_bytes, 'test.png'),
-            'epsilon': '0.01'
+            'video': (video_data, 'test.mp4'),
+            'max_frames': '500'  # Too high
         }
 
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
-        assert response.status_code == 200
-        result = json.loads(response.data)
-        assert result['success'] == True
-
-    def test_poison_different_epsilons(self, client, test_image):
-        """Test poisoning with different epsilon values"""
-        epsilons = ['0.005', '0.01', '0.02', '0.05']
-
-        for eps in epsilons:
-            data = {
-                'image': (test_image(), 'test.jpg'),
-                'epsilon': eps
-            }
-
-            response = client.post(
-                '/api/poison',
-                data=data,
-                content_type='multipart/form-data'
-            )
-
-            assert response.status_code == 200
-            result = json.loads(response.data)
-            assert result['signature']['epsilon'] == float(eps)
-
-
-class TestBatchEndpoint:
-    """Test batch poisoning endpoint"""
-
-    def test_batch_poison_success(self, client):
-        """Test successful batch poisoning"""
-        # Create multiple test images
-        images = []
-        for i in range(3):
-            img = Image.new('RGB', (224, 224), color=(i*80, i*80, i*80))
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format='JPEG')
-            img_bytes.seek(0)
-            images.append((img_bytes, f'test_{i}.jpg'))
-
-        data = {
-            'images': images,
-            'epsilon': '0.01'
-        }
-
-        response = client.post(
-            '/api/batch',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
-        assert response.status_code == 200
-
-        result = json.loads(response.data)
-        assert result['success'] == True
-        assert 'results' in result
-        assert 'signature' in result
-        assert result['total'] == 3
-        assert result['successful'] == 3
-
-        # Check each result
-        for res in result['results']:
-            assert res['success'] == True
-            assert 'poisoned_image' in res
-            assert 'original_name' in res
-
-    def test_batch_no_images(self, client):
-        """Test batch poisoning without images"""
-        response = client.post('/api/batch', data={})
-
-        assert response.status_code == 400
-        result = json.loads(response.data)
-        assert 'error' in result
-
-    def test_batch_too_many_images(self, client):
-        """Test batch poisoning with too many images"""
-        # Try to send 101 images (over the 100 limit)
-        images = []
-        for i in range(101):
-            img_bytes = io.BytesIO()
-            img = Image.new('RGB', (50, 50), color='blue')
-            img.save(img_bytes, format='JPEG')
-            img_bytes.seek(0)
-            images.append((img_bytes, f'test_{i}.jpg'))
-
-        data = {
-            'images': images,
-            'epsilon': '0.01'
-        }
-
-        response = client.post(
-            '/api/batch',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
-        assert response.status_code == 400
-        result = json.loads(response.data)
-        assert 'Maximum 100 images' in result['error']
-
-    def test_batch_shared_signature(self, client):
-        """Test that batch uses same signature for all images"""
-        images = []
-        for i in range(2):
-            img = Image.new('RGB', (224, 224), color='green')
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format='JPEG')
-            img_bytes.seek(0)
-            images.append((img_bytes, f'test_{i}.jpg'))
-
-        data = {
-            'images': images,
-            'epsilon': '0.01'
-        }
-
-        response = client.post(
-            '/api/batch',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
-        assert response.status_code == 200
-        result = json.loads(response.data)
-
-        # There should be one signature for all images
-        assert 'signature_id' in result
-        assert 'signature' in result
-
-
-class TestImageValidation:
-    """Test image validation and error handling"""
-
-    def test_empty_filename(self, client):
-        """Test upload with empty filename"""
-        data = {
-            'image': (io.BytesIO(b"data"), ''),
-            'epsilon': '0.01'
-        }
-
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
+        response = client.post('/api/extract',
+                              data=data,
+                              content_type='multipart/form-data')
 
         assert response.status_code == 400
 
-    def test_large_image(self, client):
-        """Test with large image"""
-        # Create a large image (4K)
-        img = Image.new('RGB', (3840, 2160), color='purple')
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format='JPEG', quality=95)
-        img_bytes.seek(0)
+
+class TestCompareEndpoint:
+    """Test hash comparison endpoint"""
+
+    def test_compare_with_hash_string(self, client):
+        """Test comparison with direct hash string"""
+        # Create a dummy 256-bit hash
+        test_hash = '0' * 128 + '1' * 128
 
         data = {
-            'image': (img_bytes, 'large.jpg'),
-            'epsilon': '0.01'
+            'hash': test_hash,
+            'threshold': '30'
         }
 
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
+        response = client.post('/api/compare',
+                              data=data,
+                              content_type='multipart/form-data')
 
-        # Should succeed (or fail gracefully if too large)
-        assert response.status_code in [200, 413, 500]
-
-    def test_small_image(self, client):
-        """Test with very small image"""
-        img = Image.new('RGB', (10, 10), color='yellow')
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format='JPEG')
-        img_bytes.seek(0)
-
-        data = {
-            'image': (img_bytes, 'small.jpg'),
-            'epsilon': '0.01'
-        }
-
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
-        # Should succeed
         assert response.status_code == 200
-
-
-class TestResponseFormat:
-    """Test API response formats"""
-
-    def test_success_response_structure(self, client, test_image):
-        """Test structure of successful response"""
-        data = {
-            'image': (test_image(), 'test.jpg'),
-            'epsilon': '0.01'
-        }
-
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
         result = json.loads(response.data)
 
-        # Check required fields
-        required_fields = ['success', 'poisoned_image', 'signature_id', 'signature']
-        for field in required_fields:
-            assert field in result
+        assert result['success'] is True
+        assert 'matches' in result
+        assert 'num_matches' in result
+        assert result['query_hash'] == test_hash
 
-        # Verify types
-        assert isinstance(result['success'], bool)
-        assert isinstance(result['poisoned_image'], str)
-        assert isinstance(result['signature_id'], str)
-        assert isinstance(result['signature'], dict)
-
-    def test_error_response_structure(self, client):
-        """Test structure of error response"""
-        response = client.post('/api/poison', data={})
-
-        result = json.loads(response.data)
-        assert 'error' in result
-        assert isinstance(result['error'], str)
-
-    def test_content_type_json(self, client, test_image):
-        """Test that response is JSON"""
+    def test_compare_invalid_hash(self, client):
+        """Test comparison with invalid hash format"""
         data = {
-            'image': (test_image(), 'test.jpg'),
-            'epsilon': '0.01'
+            'hash': 'invalid',  # Not 256 bits
+            'threshold': '30'
         }
 
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
+        response = client.post('/api/compare',
+                              data=data,
+                              content_type='multipart/form-data')
 
-        assert response.content_type == 'application/json'
+        assert response.status_code == 400
+
+    def test_compare_no_input(self, client):
+        """Test comparison without hash or video"""
+        response = client.post('/api/compare',
+                              data={},
+                              content_type='multipart/form-data')
+
+        assert response.status_code == 400
 
 
-class TestCORS:
-    """Test CORS headers"""
+class TestStatsEndpoint:
+    """Test statistics endpoint"""
 
-    def test_cors_headers_present(self, client, test_image):
-        """Test that CORS headers are present"""
-        data = {
-            'image': (test_image(), 'test.jpg'),
-            'epsilon': '0.01'
-        }
-
-        response = client.post(
-            '/api/poison',
-            data=data,
-            content_type='multipart/form-data'
-        )
-
-        # CORS headers should be present (added by Flask-CORS)
+    def test_stats(self, client):
+        """Test /api/stats endpoint"""
+        response = client.get('/api/stats')
         assert response.status_code == 200
 
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])
+        data = json.loads(response.data)
+        assert data['success'] is True
+        assert 'total_hashes' in data
+        assert 'database_path' in data

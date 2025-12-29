@@ -41,18 +41,6 @@ python experiments/batch_hash_robustness.py videos/ 60 28
 # Output: Hamming distance (bits changed) for each video
 ```
 
-### Apply Adversarial Protection (Poisoning)
-
-Force your video to match a specific perceptual hash to prove ownership or track it.
-
-```bash
-# Poison video to collide with a random target hash
-python cli/poison.py input.mp4 --output protected.mp4
-
-# Check results:
-# Target Hash: 10110...
-# Final Distance: 1 bit (MATCH)
-```
 
 ### Docker (Full Stack - Web UI + API)
 
@@ -179,34 +167,29 @@ See [VERIFICATION_PROOF.md](VERIFICATION_PROOF.md) for full methodology and [doc
 
 ```
 basilisk/
-├── experiments/              # Perceptual hash research & validation
-│   ├── perceptual_hash.py        # Hash extraction implementation
-│   ├── batch_hash_robustness.py  # Compression stability testing
-│   └── deprecated_dct_approach/  # Archived DCT poisoning research
-├── poison-core/              # Radioactive marking (experimental)
-│   ├── radioactive_poison.py     # PGD adversarial perturbations
-│   ├── poison_cli.py             # Command-line interface
-│   └── requirements.txt
-├── verification/             # Empirical validation scripts
-│   ├── verify_poison_FIXED.py    # Corrected radioactive detection test
-│   ├── create_dataset.py         # Synthetic dataset generation
-│   └── README.md
+├── core/                     # Core perceptual hash implementation
+│   ├── perceptual_hash.py        # Compression-robust video fingerprinting
+│   ├── hash_database.py          # SQLite storage for forensic evidence
+│   └── batch_robustness.py       # Batch hash extraction utilities
+├── cli/                      # Command-line tools
+│   ├── extract.py                # Hash extraction from videos
+│   └── compare.py                # Hash comparison/forensics
 ├── api/                      # Flask REST API server
-│   ├── server.py
+│   ├── server.py                 # Perceptual hash tracking API
 │   └── requirements.txt
 ├── web-ui/                   # Next.js web interface
 │   ├── app/
 │   └── package.json
 ├── docs/                     # Technical documentation
 │   ├── Perceptual_Hash_Whitepaper.md  # Primary technical whitepaper
-│   ├── COMPRESSION_LIMITS.md          # Compression analysis
-│   ├── LAYER1_ALTERNATIVES.md         # Research on radioactive improvements
+│   ├── COMPRESSION_LIMITS.md          # Compression robustness analysis
 │   └── RESEARCH.md                    # Academic references
 ├── notebooks/                # Jupyter notebooks for demos
 │   └── Basilisk_Demo.ipynb
-└── tests/                    # Comprehensive test suite (55+ tests)
-    ├── test_perceptual_hash.py
-    ├── test_radioactive_poison.py
+├── experimental/             # Archived research (deprecated)
+│   └── deprecated_dct_approach/   # Failed DCT poisoning attempts
+└── tests/                    # Test suite
+    ├── test_compression_robustness.py
     └── test_api.py
 ```
 
@@ -244,25 +227,6 @@ python3 experiments/perceptual_hash.py test_crf40.mp4 30
 
 All well under 30-bit detection threshold (11.7%).
 
-### Radioactive Marking Validation (Experimental)
-
-**Test signature detection in trained models:**
-
-```bash
-# Create verification dataset
-python3 verification/create_dataset.py --clean 100 --poisoned 100 --epsilon 0.08
-
-# Train model and detect signature
-python3 verification/verify_poison_FIXED.py --epochs 10 --device cpu
-```
-
-**Expected Results:**
-
-- Confidence score: ~0.044
-- Z-score: ~4.4 (p < 0.00001)
-- **Limitation:** Only works with frozen feature extractors (transfer learning)
-
-See [VERIFICATION_PROOF.md](VERIFICATION_PROOF.md) for detailed methodology.
 
 ### Automated Test Suite
 
@@ -287,62 +251,53 @@ See [tests/README.md](tests/README.md) and [TESTING_SUMMARY.md](TESTING_SUMMARY.
 
 ## 📋 Usage Examples
 
-### CLI - Single Image
+### CLI - Extract Video Hash
 
 ```bash
-python poison-core/poison_cli.py poison input.jpg output.jpg --epsilon 0.01
+python cli/extract.py video.mp4
 ```
 
-### CLI - Batch Processing
+### CLI - Compare Two Videos
 
 ```bash
-python poison-core/poison_cli.py batch ./my_portfolio/ ./protected/ --epsilon 0.015
+python cli/compare.py video1.mp4 video2.mp4
 ```
 
-### CLI - Detection
+### API - Extract Hash via cURL
 
 ```bash
-python poison-core/poison_cli.py detect trained_model.pth signature.json test_images/
+curl -X POST http://localhost:5000/api/extract \
+  -F "video=@my_video.mp4" \
+  -F "max_frames=60"
 ```
 
-### API - cURL
+### API - Compare Hash
 
 ```bash
-curl -X POST http://localhost:5000/api/poison \
-  -F "image=@my_art.jpg" \
-  -F "epsilon=0.01" \
-  > response.json
+curl -X POST http://localhost:5000/api/compare \
+  -F "hash=01101001..." \
+  -F "threshold=30"
 ```
 
 ---
 
-## ⚙️ Configuration
+## 🔐 Security & Limitations
 
-### Epsilon (Perturbation Strength)
+### IMPORTANT: Fixed Seed Warning
 
-| Value | Effect | Use Case |
-|-------|--------|----------|
-| 0.005 | Very subtle, harder to detect | Maximum stealth |
-| **0.01** | **Recommended** | **Balance of stealth + robustness** |
-| 0.02 | Strong protection | High-value work |
-| 0.05 | Maximum protection | May have visible artifacts |
+⚠️ **The perceptual hash uses a FIXED SEED (42) for reproducibility.**
 
-**Rule of thumb:** Start with 0.01. Increase if signature doesn't survive training.
+**Security Implications:**
+- Anyone with access to this code can compute the same hash for any video
+- Hashes are **reproducible** but **NOT cryptographically secure**
+- This is a **forensic fingerprint**, not a cryptographic signature
+- Attackers who know the algorithm can precompute hash collisions
 
----
-
-## 🔐 Security & Legal
-
-### How Signatures Are Generated
-
-```python
-seed = SecureRandom(256 bits)  # Cryptographically secure
-signature = SHA256(seed) → 512-dimensional unit vector
-```
-
-- **2^256 possible signatures** (impossible to guess)
-- **Deterministic** from seed (reproducible proof)
-- **Non-repudiable** (you can't fake someone else's signature without their seed)
+**What this means:**
+- ✅ Good for: Tracking your own videos across platforms, building evidence databases
+- ❌ Not good for: Preventing determined adversaries from creating hash collisions
+- ✅ Use case: Forensic evidence that "this video came from me"
+- ❌ Not a use case: Cryptographic proof of ownership
 
 ### Legal Use
 
@@ -395,19 +350,18 @@ See [COMPRESSION_LIMITS.md](docs/COMPRESSION_LIMITS.md) for technical details.
 **Perceptual Hash Tracking:**
 
 - ✅ **Video fingerprinting** - 256-bit perceptual hash (CRF 28-40, 3-10 bit drift)
-- ✅ **Platform validation** - 6 major platforms tested (YouTube, TikTok, Facebook, Instagram, Vimeo)
+- ✅ **Platform validation** - 6 major platforms tested (YouTube, TikTok, Facebook, Instagram, Vimeo, Twitter)
 - ✅ **Compression robustness** - Survives extreme compression (up to CRF 40)
-- ✅ **CLI, API, Web UI** - Multiple interfaces for batch processing
-- ✅ **75+ tests** - 85%+ code coverage
+- ✅ **CLI & API** - Command-line tools and REST API for integration
+- ✅ **Forensic database** - SQLite storage for evidence collection
+- ✅ **Open source** - MIT licensed, transparent implementation
 
-### Research Preview 🔬
+### Known Limitations ⚠️
 
-**Radioactive Data Marking:**
-
-- 🔬 **Transfer learning detection** - Z-score: 4.4 (p < 0.00001), requires frozen features
-- 🔬 **Limited applicability** - Only works when models freeze feature extractors
-- 🔬 **Full model training** - Active research, not yet validated
-- 🔬 **CLI, API available** - Experimental use only
+- Fixed seed (42) means hashes are reproducible by anyone with the code
+- No adversarial robustness testing against targeted removal attacks
+- Not tested against rescaling, cropping, or temporal attacks (frame reordering)
+- False positive rate not quantified on large datasets
 
 ---
 
