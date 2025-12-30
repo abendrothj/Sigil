@@ -7,7 +7,7 @@
 [![Novel Research](https://img.shields.io/badge/Novel-First%20of%20Its%20Kind-orange)](docs/Perceptual_Hash_Whitepaper.md)
 [![UCF-101 Validated](https://img.shields.io/badge/Dataset-UCF--101%20Validated-brightgreen)](VERIFICATION_PROOF.md)
 [![Hash Drift: 8.7 bits](https://img.shields.io/badge/Mean%20Drift-8.7%20bits%20(3.4%25)-success)](docs/Perceptual_Hash_Whitepaper.md)
-[![27 Tests Passing](https://img.shields.io/badge/Tests-27%2F27%20Passing-success)](tests/test_crypto_signatures.py)
+[![35 Tests Passing](https://img.shields.io/badge/Tests-35%2F35%20Passing-success)](tests/)
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success)](#current-status)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abendrothj/basilisk/blob/main/notebooks/Basilisk_Demo.ipynb)
 
@@ -176,9 +176,7 @@ See [VERIFICATION_PROOF.md](VERIFICATION_PROOF.md) for full methodology and [doc
 
 ---
 
-## 🎓 Research Quality & Academic Validation
-
-**This isn't a toy project - it's research-quality work with empirical validation:**
+## 🎓 Empirical Validation
 
 ### Quantitative Results (UCF-101 Dataset)
 
@@ -187,7 +185,7 @@ See [VERIFICATION_PROOF.md](VERIFICATION_PROOF.md) for full methodology and [doc
 - **Extreme compression (CRF 35):** 22 bits (8.6%) - still passes
 - **Statistical significance:** 2-3× safety margin below detection threshold
 
-### Novel Contributions
+### Key Contributions
 
 1. **First open-source perceptual hash for AI dataset provenance**
    - C2PA (Adobe) uses exact hashes that fail on re-encoding
@@ -195,7 +193,7 @@ See [VERIFICATION_PROOF.md](VERIFICATION_PROOF.md) for full methodology and [doc
    - Basilisk combines perceptual matching + cryptographic signatures
 
 2. **Empirical validation on standard benchmark (UCF-101)**
-   - 13,320 videos tested
+   - 13,320 videos in dataset
    - Reproducible methodology (fixed seed 42)
    - Documented compression robustness across 6 platforms
 
@@ -204,18 +202,12 @@ See [VERIFICATION_PROOF.md](VERIFICATION_PROOF.md) for full methodology and [doc
    - Court-recognized timestamp oracles
    - Complete chain of custody documentation
 
-### Implementation Quality
+### Implementation
 
-- ✅ **27/27 unit tests passing** (Ed25519 signatures, hash extraction, verification)
-- ✅ **Production-grade code** (CLI + API + documentation)
-- ✅ **1200+ lines of documentation** (3 guides: Technical, Quick Start, Anchoring)
-- ✅ **Backward compatible** (database migrations, optional signatures)
-
-### Publications & Recognition
-
-- **Publishable at workshop level** (IEEE SPW, USENIX FOCI)
-- **Competitive for top PhD programs** (novel application domain)
-- **Industry-relevant** (Google Research, Meta AI, OpenAI Safety internships)
+- ✅ **35/35 tests passing** (8 API tests, 27 cryptographic signature tests)
+- ✅ **Complete toolchain** (CLI + REST API + Web UI)
+- ✅ **1200+ lines of documentation** (Technical whitepapers, quick-start guides, API docs)
+- ✅ **Backward compatible** (Database migrations, optional signature layer)
 
 ---
 
@@ -483,7 +475,7 @@ See [COMPRESSION_LIMITS.md](docs/COMPRESSION_LIMITS.md) for technical details.
 - ✅ **Compression robustness** - Survives real-world platform compression (CRF 18-35)
 - ✅ **CLI & API** - Command-line tools and REST API for integration
 - ✅ **Forensic database** - SQLite storage with signature schema
-- ✅ **27/27 tests passing** - Complete unit test coverage
+- ✅ **35/35 tests passing** - Complete unit test coverage
 - ✅ **1200+ lines documentation** - Technical whitepapers + quick-start guides
 - ✅ **Open source** - MIT licensed, transparent implementation
 
@@ -496,37 +488,31 @@ See [COMPRESSION_LIMITS.md](docs/COMPRESSION_LIMITS.md) for technical details.
 
 ---
 
-## 👔 For Hiring Managers & Recruiters
+## 👔 Technical Highlights
 
-**Why this project demonstrates exceptional engineering + research skills:**
+This project demonstrates capabilities across multiple domains:
 
-### Research Abilities
+### Research Skills
 
-- **Empirical validation:** Tested on UCF-101 (13,320 videos) with quantitative metrics
-- **Scientific rigor:** Reproducible methodology, statistical significance analysis
-- **Novel problem framing:** First to apply perceptual hashing to AI dataset accountability
-- **Academic writing:** 1200+ lines of technical documentation at PhD-student level
+- **Empirical validation:** Tested on UCF-101 benchmark (13,320 videos) with quantitative metrics
+- **Reproducible methodology:** Fixed seed, documented parameters, statistical analysis
+- **Novel problem framing:** Applied perceptual hashing to AI dataset provenance tracking
+- **Technical writing:** 1200+ lines of documentation across whitepapers and guides
 
-### Engineering Abilities
+### Engineering Skills
 
-- **Production-quality code:** 27/27 tests passing, complete CLI/API, database migrations
-- **System design:** Three-part defense (hash + signature + anchoring)
-- **Security thinking:** Fixed seed trade-offs, threat modeling, legal framework integration
-- **UX design:** Progressive disclosure (toy mode → pro mode), invisible crypto
+- **Production code:** 35/35 tests passing, complete CLI/API, database schema migrations
+- **System architecture:** Three-layer defense system (hash + signature + timestamp anchoring)
+- **Security design:** Threat modeling, cryptographic implementation, key management
+- **Developer experience:** Invisible crypto (auto-generated keys), progressive disclosure
 
 ### Technical Stack
 
-- **Computer Vision:** OpenCV (Canny, Gabor, Laplacian, histograms)
-- **Cryptography:** Ed25519 signatures, SHA-256 fingerprinting, canonical JSON signing
-- **Backend:** Python 3.8+, Flask REST API, SQLite with migrations
-- **Testing:** pytest, 27 unit tests, empirical validation suite
-- **Documentation:** Markdown, technical whitepapers, quick-start guides
-
-### Comparable Work
-
-- **Better than 95% of undergrad honor theses** (has empirical validation)
-- **Comparable to strong 1st-year PhD student work** (novel application domain)
-- **Top 0.1% of undergraduate CS projects** (research + engineering + documentation)
+- **Computer Vision:** OpenCV (Canny edge detection, Gabor texture filters, Laplacian saliency, RGB histograms)
+- **Cryptography:** Ed25519 digital signatures, SHA-256 fingerprinting, canonical JSON signing
+- **Backend:** Python 3.8+, Flask REST API, SQLite with schema versioning
+- **Testing:** pytest, unit tests, integration tests, empirical validation suite
+- **Documentation:** Technical whitepapers, API documentation, quick-start guides
 
 ---
 

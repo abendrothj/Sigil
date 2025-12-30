@@ -47,7 +47,7 @@ Basilisk implements a three-part defense system for video content accountability
 - **Ed25519 digital signatures** - 256-bit elliptic curve cryptography
 - **Ownership proof** - Mathematically proves possession of hash at signing time
 - **Auto-generated identity** - Seamless key management (like SSH)
-- **27/27 tests passing** - Complete unit test coverage
+- **35/35 tests passing** - Complete test coverage (27 crypto + 8 API)
 
 #### 1.2.3 Web2 Timestamp Anchoring (Legal Evidence)
 
@@ -527,7 +527,7 @@ else:
 
 **Production Features:**
 
-- **27/27 unit tests passing** - Complete cryptographic test coverage
+- **35/35 tests passing** - Complete test coverage (27 crypto + 8 API)
 - **Auto-generated identity** - Seamless UX (like SSH keys)
 - **<100ms overhead** - Negligible performance impact
 - **Backward compatible** - Signatures are optional (--sign flag)
@@ -749,7 +749,7 @@ Basilisk provides a complete chain of custody system for video content combining
 **Key Results - Cryptographic Signatures:**
 
 - ✅ Ed25519 digital signatures (256-bit security, 128-bit strength)
-- ✅ 27/27 unit tests passing (100% coverage)
+- ✅ 35/35 tests passing (27 crypto + 8 API, 100% coverage)
 - ✅ <100ms overhead (negligible performance impact)
 - ✅ Web2 timestamp anchoring (Twitter/GitHub legal precedent)
 - ✅ 1200+ lines production documentation
@@ -860,7 +860,7 @@ python -m cli.compare test_video.mp4 compressed.mp4
 # Expected:
 # - Signature verification: VALID
 # - Hash drift: < 15 bits at CRF 28
-# - Test suite: 27/27 passing
+# - Test suite: 35/35 passing
 ```
 
 ### System Requirements

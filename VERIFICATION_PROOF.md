@@ -9,7 +9,7 @@ Project Basilisk provides a complete chain of custody system for video content:
 
 **Perceptual Hash Tracking** (Production ✅) - Compression-robust video fingerprinting verified on UCF-101 real videos with 4-14 bit drift at CRF 28 (mean: 8.7 bits, 3.4%).
 
-**Cryptographic Signatures** (Production ✅) - Ed25519 digital signatures with 27/27 unit tests passing, providing mathematically-verifiable ownership proof with Web2 timestamp anchoring.
+**Cryptographic Signatures** (Production ✅) - Ed25519 digital signatures with 35/35 tests passing (27 crypto + 8 API), providing mathematically-verifiable ownership proof with Web2 timestamp anchoring.
 
 This document provides empirical validation results and reproducibility instructions for both layers.
 
@@ -171,7 +171,7 @@ print(f'Drift: {hamming_distance(hash_orig, hash_compressed)}/256 bits')
 
 1. **Implement per-user seed configuration** - Allow users to use their own secret seeds
 2. **Add hash salting** - Per-video salts to prevent precomputed collision databases
-3. ~~**Cryptographic signing**~~ - ✅ **IMPLEMENTED** (Ed25519 signatures with 27/27 tests passing)
+3. ~~**Cryptographic signing**~~ - ✅ **IMPLEMENTED** (Ed25519 signatures with 35/35 tests passing)
 4. **Rate limiting and authentication** - For API deployments
 
 ---
@@ -189,9 +189,9 @@ print(f'Drift: {hamming_distance(hash_orig, hash_compressed)}/256 bits')
 
 **Test Suite:**
 
-- Total tests: 27 unit tests
-- Pass rate: 27/27 (100%)
-- Coverage: Identity generation, signature creation/verification, tampering detection, serialization
+- Total tests: 35 tests (27 cryptographic + 8 API)
+- Pass rate: 35/35 (100%)
+- Coverage: Identity generation, signature creation/verification, tampering detection, serialization, API endpoints
 
 ### Results
 
@@ -277,7 +277,7 @@ Perceptual hashing provides a robust, compression-resistant method for tracking 
 
 **✅ CRYPTOGRAPHIC SIGNATURES VERIFIED:**
 
-Ed25519 digital signatures provide mathematically-verifiable ownership proof with 27/27 unit tests passing. Web2 timestamp anchoring (Twitter/GitHub) creates legally-recognized temporal evidence for court proceedings.
+Ed25519 digital signatures provide mathematically-verifiable ownership proof with 35/35 tests passing (27 cryptographic + 8 API). Web2 timestamp anchoring (Twitter/GitHub) creates legally-recognized temporal evidence for court proceedings.
 
 **Key achievements:**
 

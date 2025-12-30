@@ -23,6 +23,8 @@ build/
 *.pt
 checkpoints/
 
+*.db
+
 # Data
 *.jpg
 *.jpeg
