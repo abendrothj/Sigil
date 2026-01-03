@@ -16,7 +16,7 @@ import tempfile
 import numpy as np
 
 # Add core to path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     from core.perceptual_hash import load_video_frames, extract_perceptual_features, compute_perceptual_hash, hamming_distance
@@ -25,7 +25,11 @@ try:
 except ImportError as e:
     print(f"Error importing core modules: {e}")
     print("Make sure core/ is in the correct location")
-    sys.exit(1)
+    # Only exit if not in test mode
+    if __name__ == "__main__":
+        sys.exit(1)
+    else:
+        raise
 
 app = Flask(__name__)
 CORS(app)

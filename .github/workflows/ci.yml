@@ -37,11 +37,15 @@ jobs:
         pip install -r tests/requirements.txt
     
     - name: Run tests with pytest
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         pytest tests/ -v --tb=short --color=yes
     
     - name: Run tests with coverage
       if: matrix.python-version == '3.11'
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         pytest tests/ --cov=core --cov=api --cov=cli --cov-report=xml --cov-report=term-missing
     
