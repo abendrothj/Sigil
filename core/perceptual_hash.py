@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional, Dict, List, Union
 import numpy as np
 import cv2
 
@@ -20,7 +21,7 @@ import cv2
 # - Adding cryptographic signing on top of perceptual hash
 
 
-def load_video_frames(video_path: str, max_frames: int | None = 60) -> list[np.ndarray]:
+def load_video_frames(video_path: str, max_frames: Optional[int] = 60) -> List[np.ndarray]:
     """
     Load video frames from file using OpenCV.
     
@@ -69,7 +70,7 @@ def getGaborKernel(w: int, h: int, theta: float) -> np.ndarray:
     return cv2.getGaborKernel((w, h), 4.0, theta, 10.0, 0.5, 0, ktype=cv2.CV_32F)
 
 
-def extract_perceptual_features(video_frames: list[np.ndarray]) -> dict[int, dict[str, np.ndarray]]:
+def extract_perceptual_features(video_frames: List[np.ndarray]) -> Dict[int, Dict[str, np.ndarray]]:
     """
     Extract perceptual features from video frames.
     
@@ -85,7 +86,7 @@ def extract_perceptual_features(video_frames: list[np.ndarray]) -> dict[int, dic
     Returns:
         Dictionary mapping frame index to feature dictionary
     """
-    features: dict[int, dict[str, np.ndarray]] = {}
+    features: Dict[int, Dict[str, np.ndarray]] = {}
     
     # Pre-compute Gabor kernels for texture
     kernels = []
@@ -131,7 +132,7 @@ def extract_perceptual_features(video_frames: list[np.ndarray]) -> dict[int, dic
     return features
 
 
-def compute_perceptual_hash(features: dict[int, dict[str, np.ndarray]], hash_size: int = 256, seed: int | str | None = 42) -> np.ndarray:
+def compute_perceptual_hash(features: Dict[int, Dict[str, np.ndarray]], hash_size: int = 256, seed: Union[int, str, None] = 42) -> np.ndarray:
     """
     Computes a 256-bit perceptual hash from extracted features.
     Uses random projection and incremental mean for memory efficiency.

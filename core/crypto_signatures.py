@@ -13,10 +13,10 @@ License: MIT
 import os
 import json
 import base64
+from typing import Optional, Dict, Union, Tuple, Any
 import hashlib
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -36,7 +36,7 @@ class SigilIdentity:
     DEFAULT_PRIVATE_KEY = "id_ed25519"
     DEFAULT_PUBLIC_KEY = "id_ed25519.pub"
 
-    def __init__(self, key_dir: str | None = None, private_key_name: str | None = None):
+    def __init__(self, key_dir: Optional[str] = None, private_key_name: Optional[str] = None):
         """
         Initialize Sigil Identity.
         
@@ -55,8 +55,8 @@ class SigilIdentity:
         self.private_key_path = self.key_dir / params_private
         self.public_key_path = self.key_dir / params_public
         
-        self.private_key: ed25519.Ed25519PrivateKey | None = None
-        self.public_key: ed25519.Ed25519PublicKey | None = None
+        self.private_key: Optional[ed25519.Ed25519PrivateKey] = None
+        self.public_key: Optional[ed25519.Ed25519PublicKey] = None
         
         # Load keys if they exist
         if self.private_key_path.exists():
@@ -147,7 +147,7 @@ class SigilIdentity:
         )
         return hashlib.sha256(public_bytes).hexdigest()
 
-    def sign_hash(self, hash_hex: str, metadata: dict[str, str | dict] | None = None) -> dict[str, str | dict]:
+    def sign_hash(self, hash_hex: str, metadata: Dict[str, Union[str, dict]] | None = None) -> dict[str, str | dict]:
         """
         Cryptographically sign a perceptual hash.
         
@@ -163,7 +163,7 @@ class SigilIdentity:
             
         # Create canonical payload to sign
         # We sign: hash + metadata + timestamp
-        claim: dict[str, str | dict] = {
+        claim: Dict[str, Union[str, dict]] = {
             "hash_hex": hash_hex,
             "metadata": metadata or {},
             "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
@@ -186,7 +186,7 @@ class SigilIdentity:
         }
 
     @staticmethod
-    def verify_signature(signature_doc: dict[str, str | dict]) -> tuple[bool, str | None]:
+    def verify_signature(signature_doc: Dict[str, Union[str, dict]]) -> tuple[bool, Optional[str]]:
         """
         Verify a Sigil signature.
         
@@ -255,7 +255,7 @@ class SignatureManager:
     High-level API for creating and managing signature files.
     """
 
-    def __init__(self, identity: SigilIdentity | None = None):
+    def __init__(self, identity: Optional[SigilIdentity] = None):
         """
         Initialize signature manager.
 
@@ -268,8 +268,8 @@ class SignatureManager:
         self,
         hash_hex: str,
         output_path: Path,
-        video_filename: str | None = None,
-        additional_metadata: dict[str, Any] | None = None
+        video_filename: Optional[str] = None,
+        additional_metadata: Optional[Dict[str, Any]] = None
     ) -> Path:
         """
         Create and save a signature.json file.
@@ -307,7 +307,7 @@ class SignatureManager:
         return output_path
 
     @staticmethod
-    def verify_signature_file(signature_path: Path) -> tuple[bool, dict[str, Any]]:
+    def verify_signature_file(signature_path: Path) -> Tuple[bool, Dict[str, Any]]:
         """
         Verify a signature.json file.
 
@@ -341,14 +341,14 @@ class SignatureManager:
 
 # Convenience functions for CLI usage
 
-def create_identity(key_dir: str | None = None, overwrite: bool = False) -> str:
+def create_identity(key_dir: Optional[str] = None, overwrite: bool = False) -> str:
     """Create new Sigil identity. Returns key_id."""
     identity = SigilIdentity(key_dir=key_dir)
     identity.generate_keys(force=overwrite)
     return identity.get_key_id()
 
 
-def sign_hash(hash_hex: str, metadata: dict[str, Any] | None = None, key_dir: str | None = None) -> dict[str, Any]:
+def sign_hash(hash_hex: str, metadata: Optional[Dict[str, Any]] = None, key_dir: Optional[str] = None) -> Dict[str, Any]:
     """Sign a hash with the default or specified identity."""
     identity = SigilIdentity(key_dir=key_dir)
     if not identity.private_key:
@@ -356,12 +356,12 @@ def sign_hash(hash_hex: str, metadata: dict[str, Any] | None = None, key_dir: st
     return identity.sign_hash(hash_hex, metadata)
 
 
-def verify_signature(signature_doc: dict[str, Any]) -> tuple[bool, str | None]:
+def verify_signature(signature_doc: dict[str, Any]) -> tuple[bool, Optional[str]]:
     """Verify a signature document. Returns (is_valid, error_message)."""
     return SigilIdentity.verify_signature(signature_doc)
 
 
-def get_key_id(key_dir: str | None = None) -> str:
+def get_key_id(key_dir: Optional[str] = None) -> str:
     """Get the key ID of the current identity."""
     identity = SigilIdentity(key_dir=key_dir)
     if not identity.private_key:

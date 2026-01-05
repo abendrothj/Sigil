@@ -9,7 +9,7 @@ import sqlite3
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, List, Dict
 from types import TracebackType
 import numpy as np
 
@@ -18,7 +18,7 @@ class HashDatabase:
     """SQLite database for storing and querying perceptual hashes"""
 
     db_path: Path
-    conn: sqlite3.Connection | None
+    conn: Optional[sqlite3.Connection]
 
     def __init__(self, db_path: str = "hashes.db"):
         """
@@ -107,18 +107,18 @@ class HashDatabase:
     def store_hash(
         self,
         hash_binary: np.ndarray,
-        video_id: str | None = None,
-        platform: str | None = None,
-        upload_date: str | None = None,
-        file_path: str | None = None,
-        frame_count: int | None = None,
-        metadata: dict[str, Any] | None = None,
-        signature: str | None = None,
-        public_key: str | None = None,
-        key_id: str | None = None,
-        signed_at: str | None = None,
-        signature_version: str | None = None
-    ) -> int | None:
+        video_id: Optional[str] = None,
+        platform: Optional[str] = None,
+        upload_date: Optional[str] = None,
+        file_path: Optional[str] = None,
+        frame_count: Optional[int] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        signature: Optional[str] = None,
+        public_key: Optional[str] = None,
+        key_id: Optional[str] = None,
+        signed_at: Optional[str] = None,
+        signature_version: Optional[str] = None
+    ) -> Optional[int]:
         """
         Store perceptual hash in database
 
@@ -218,9 +218,9 @@ class HashDatabase:
         self,
         hash_binary: np.ndarray,
         threshold: int = 30,
-        platform: str | None = None,
+        platform: Optional[str] = None,
         limit: int = 100
-    ) -> list[dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
         """
         Query database for similar hashes
 
@@ -288,7 +288,7 @@ class HashDatabase:
 
         return results[:limit]
 
-    def get_stats(self) -> dict[str, Any]:
+    def get_stats(self) -> Dict[str, Any]:
         """
         Get database statistics
 
@@ -354,7 +354,7 @@ class HashDatabase:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None):
+    def __exit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]):
         self.close()
 
 
