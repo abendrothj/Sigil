@@ -12,7 +12,7 @@ from .perceptual_hash import (
     hamming_distance
 )
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __all__ = [
     "load_video_frames",
     "extract_perceptual_features",
