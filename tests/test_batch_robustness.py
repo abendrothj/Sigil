@@ -20,7 +20,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.batch_robustness import test_video, batch_test_videos
+from core.batch_robustness import compress_and_compare_video, batch_test_videos
 
 
 @pytest.fixture
@@ -91,7 +91,7 @@ class TestVideoCompression:
 
     def test_video_basic_compression(self, test_video_file):
         """Test basic video compression and hash comparison"""
-        result = test_video(test_video_file, max_frames=20, crf=28)
+        result = compress_and_compare_video(test_video_file, max_frames=20, crf=28)
 
         assert result is not None
         distance, hash_length = result
@@ -104,8 +104,8 @@ class TestVideoCompression:
     def test_video_different_crf_values(self, test_video_file):
         """Test compression with different CRF values"""
         # Lower CRF = higher quality = should be more similar
-        result_low_crf = test_video(test_video_file, max_frames=20, crf=18)
-        result_high_crf = test_video(test_video_file, max_frames=20, crf=35)
+        result_low_crf = compress_and_compare_video(test_video_file, max_frames=20, crf=18)
+        result_high_crf = compress_and_compare_video(test_video_file, max_frames=20, crf=35)
 
         assert result_low_crf is not None
         assert result_high_crf is not None
@@ -120,7 +120,7 @@ class TestVideoCompression:
 
     def test_video_max_frames_limit(self, test_video_file):
         """Test processing with frame limit"""
-        result = test_video(test_video_file, max_frames=10, crf=28)
+        result = compress_and_compare_video(test_video_file, max_frames=10, crf=28)
 
         assert result is not None
         distance, hash_length = result
@@ -131,7 +131,7 @@ class TestVideoCompression:
         # Should raise an exception or return None
         # load_video_frames will fail to open the file
         with pytest.raises((StopIteration, FileNotFoundError, Exception)):
-            test_video('/nonexistent/video.mp4', max_frames=20, crf=28)
+            compress_and_compare_video('/nonexistent/video.mp4', max_frames=20, crf=28)
 
 
 @pytest.mark.skipif(not check_ffmpeg_available(),
@@ -186,9 +186,9 @@ class TestBatchRobustnessWithoutFFmpeg:
 
     def test_import_functions(self):
         """Test that functions can be imported"""
-        from core.batch_robustness import test_video, batch_test_videos
+        from core.batch_robustness import compress_and_compare_video, batch_test_videos
 
-        assert callable(test_video)
+        assert callable(compress_and_compare_video)
         assert callable(batch_test_videos)
 
 

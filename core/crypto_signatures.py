@@ -147,7 +147,7 @@ class SigilIdentity:
         )
         return hashlib.sha256(public_bytes).hexdigest()
 
-    def sign_hash(self, hash_hex: str, metadata: Dict[str, Union[str, dict]] | None = None) -> dict[str, str | dict]:
+    def sign_hash(self, hash_hex: str, metadata: Optional[Dict[str, Union[str, dict]]] = None) -> Dict[str, Union[str, dict]]:
         """
         Cryptographically sign a perceptual hash.
         

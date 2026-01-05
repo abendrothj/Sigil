@@ -7,7 +7,7 @@ from core.perceptual_hash import load_video_frames, extract_perceptual_features,
 # Tell pytest not to collect this module
 __test__ = False
 
-def test_video(video_path, max_frames=None, crf=28):
+def compress_and_compare_video(video_path, max_frames=None, crf=28):
     compressed_path = video_path + f".crf{crf}.mp4"
     # Step 1: Load original video and compute hash
     frames_orig = load_video_frames(video_path, max_frames)
@@ -40,7 +40,7 @@ def batch_test_videos(directory, max_frames=None, crf=28):
             continue
         video_path = os.path.join(directory, fname)
         print(f"Testing {fname}...")
-        res = test_video(video_path, max_frames, crf)
+        res = compress_and_compare_video(video_path, max_frames, crf)
         if res is not None:
             dist, hash_len = res
             print(f"  Hamming distance: {dist} / {hash_len}")

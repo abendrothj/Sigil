@@ -214,7 +214,7 @@ def compute_perceptual_hash(features: Dict[int, Dict[str, np.ndarray]], hash_siz
 
 
 # --- Hamming Distance ---
-def hamming_distance(hash1: np.ndarray, hash2: np.ndarray) -> int | np.integer:
+def hamming_distance(hash1: np.ndarray, hash2: np.ndarray) -> Union[int, np.integer]:
     """
     Computes Hamming distance between two binary hashes.
     Args:
@@ -225,7 +225,7 @@ def hamming_distance(hash1: np.ndarray, hash2: np.ndarray) -> int | np.integer:
     return np.sum(hash1 != hash2)
 
 
-def compute_match_score(distance: int | np.integer, threshold: int = 30) -> float:
+def compute_match_score(distance: Union[int, np.integer], threshold: int = 30) -> float:
     """
     Compute a similarity score from Hamming distance.
     
