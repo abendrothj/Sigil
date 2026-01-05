@@ -62,7 +62,7 @@ class SigilIdentity:
         if self.private_key_path.exists():
             self.load_keys()
 
-    def generate_keys(self, force: bool = False) -> tuple[str, str]:
+    def generate_keys(self, force: bool = False) -> Tuple[str, str]:
         """
         Generate a new Ed25519 key pair.
         
@@ -186,7 +186,7 @@ class SigilIdentity:
         }
 
     @staticmethod
-    def verify_signature(signature_doc: Dict[str, Union[str, dict]]) -> tuple[bool, Optional[str]]:
+    def verify_signature(signature_doc: Dict[str, Union[str, dict]]) -> Tuple[bool, Optional[str]]:
         """
         Verify a Sigil signature.
         
@@ -292,7 +292,7 @@ class SignatureManager:
             print(f"[Sigil]   Public key:  {pub}")
 
         # Build metadata
-        metadata: dict[str, Any] = additional_metadata or {}
+        metadata: Dict[str, Any] = additional_metadata or {}
         if video_filename:
             metadata["video_filename"] = video_filename
 
@@ -356,7 +356,7 @@ def sign_hash(hash_hex: str, metadata: Optional[Dict[str, Any]] = None, key_dir:
     return identity.sign_hash(hash_hex, metadata)
 
 
-def verify_signature(signature_doc: dict[str, Any]) -> tuple[bool, Optional[str]]:
+def verify_signature(signature_doc: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
     """Verify a signature document. Returns (is_valid, error_message)."""
     return SigilIdentity.verify_signature(signature_doc)
 
